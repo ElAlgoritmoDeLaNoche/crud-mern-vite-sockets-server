@@ -48,14 +48,6 @@ const io = socketIo(server, {
 io.on('connection', (socket) => {
   console.log('Nuevo cliente conectado')
 
-  // Manejar evento para enviar un mensaje desde el cliente al servidor
-  socket.on('mensaje', (data) => {
-    console.log('Mensaje recibido desde el cliente:', data)
-
-    // Emitir el mensaje a todos los clientes conectados (broadcast)
-    io.emit('mensaje', data)
-  })
-
   // Manejar evento para crear una nueva tarea
   socket.on('crearTarea', async (data) => {
     try {
@@ -71,14 +63,14 @@ io.on('connection', (socket) => {
   // Manejar evento para editar una tarea existente
   socket.on('editarTarea', async (data) => {
     try {
-      const updatedTask = await taskController.updateTask(data, io); // Pasar el objeto completo de datos al controlador
-      console.log('Tarea editada:', updatedTask);
+      const updatedTask = await taskController.updateTask(data, io) // Pasar el objeto completo de datos al controlador
+      console.log('Tarea editada:', updatedTask)
     } catch (error) {
-      console.error('Error al editar la tarea:', error);
+      console.error('Error al editar la tarea:', error)
       // Emitir un evento de error al cliente si ocurre un error
-      socket.emit('error', { message: 'Error al editar la tarea' });
+      socket.emit('error', { message: 'Error al editar la tarea' })
     }
-  });
+  })
 
   // Manejar evento cuando un cliente se desconecta
   socket.on('disconnect', () => {

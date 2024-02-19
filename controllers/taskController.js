@@ -33,23 +33,36 @@ exports.createTask = async (title, description, dueDate, priority, completed, io
 // Controlador para actualizar una tarea existente
 exports.updateTask = async (data, io) => {
   try {
-    const { id, title, description } = data;
-    const task = await Task.findByIdAndUpdate(id, { title, description }, { new: true });
+    const { id, title, description } = data
+    const task = await Task.findByIdAndUpdate(id, { title, description }, { new: true })
 
     if (!task) {
-      throw new Error('Tarea no encontrada');
+      throw new Error('Tarea no encontrada')
     }
 
-    io.emit('tareaEditada', task);
-    console.log('Tarea editada:', task);
-    return task;
+    io.emit('tareaEditada', task)
+    console.log('Tarea editada:', task)
+    return task
   } catch (error) {
-    console.error('Error al editar la tarea:', error);
-    throw new Error('Error al editar la tarea');
+    console.error('Error al editar la tarea:', error)
+    throw new Error('Error al editar la tarea')
   }
-};
+}
 
 // Controlador para eliminar una tarea
 exports.deleteTask = async (req, res) => {
+  try {
+    const { id } = req.params
+    const deletedTask = await Task.findByIdAndDelete(id)
 
+    if (!deletedTask) {
+      return res.status(404).json({ message: 'Tarea no encontrada' })
+    }
+
+    // console.log('Tarea eliminada:', deletedTask._id)
+    return res.json({ message: 'Tarea eliminada correctamente' })
+  } catch (error) {
+    console.error('Error al eliminar la tarea:', error)
+    return res.status(500).json({ message: 'Error al eliminar la tarea' })
+  }
 }
