@@ -1,68 +1,66 @@
 const Task = require('../models/Task')
+const fs = require('fs')
+const path = require('path')
 
-// Controlador para obtener todas las tareas
 exports.getAllTasks = async (req, res) => {
-  try {
-    const tasks = await Task.find()
-    res.json(tasks)
-  } catch (error) {
-    res.status(500).json({ message: error.message })
-  }
+	try {
+		const tasks = await Task.find()
+		res.status(200).json(tasks)
+	} catch (error) {
+		console.error(error)
+		res.status(500).json({ message: 'Server Error' })
+	}
 }
 
-// Controlador para crear una nueva tarea
-exports.createTask = async (title, description, dueDate, priority, completed, io) => {
-  try {
-    const task = new Task({
-      title,
-      description,
-      dueDate,
-      priority,
-      completed: completed || false,
-    })
-
-    const newTask = await task.save()
-    io.emit('tareaCreada', newTask)
-    return newTask
-  } catch (error) {
-    console.error('Error al crear y guardar la tarea:', error)
-    throw new Error('Error al crear y guardar la tarea')
-  }
+exports.createTask = async (req, res) => {
+	try {
+		const { title, description } = req.body
+		const imageUrl = req.file.path // Multer stores the uploaded file path in req.file.path
+		const task = new Task({ title, description, imageUrl })
+		await task.save()
+		res.status(201).json(task)
+	} catch (error) {
+		console.error(error)
+		res.status(500).json({ message: 'Server Error' })
+	}
 }
 
-// Controlador para actualizar una tarea existente
-exports.updateTask = async (data, io) => {
-  try {
-    const { id, title, description } = data
-    const task = await Task.findByIdAndUpdate(id, { title, description }, { new: true })
+exports.updateTask = async (req, res) => {
 
-    if (!task) {
-      throw new Error('Tarea no encontrada')
-    }
+	const { id } = req.params
+	const { title, description } = req.body
 
-    io.emit('tareaEditada', task)
-    console.log('Tarea editada:', task)
-    return task
-  } catch (error) {
-    console.error('Error al editar la tarea:', error)
-    throw new Error('Error al editar la tarea')
-  }
+	try {
+		const updatedTask = await Task.findByIdAndUpdate(id, { title, description }, { new: true })
+		res.status(200).json(updatedTask)
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Server Error' });
+	}
 }
 
-// Controlador para eliminar una tarea
 exports.deleteTask = async (req, res) => {
-  try {
-    const { id } = req.params
-    const deletedTask = await Task.findByIdAndDelete(id)
+	const { id } = req.params;
 
-    if (!deletedTask) {
-      return res.status(404).json({ message: 'Tarea no encontrada' })
-    }
+	try {
+		// Buscar la tarea por ID
+		const task = await Task.findById(id);
 
-    // console.log('Tarea eliminada:', deletedTask._id)
-    return res.json({ message: 'Tarea eliminada correctamente' })
-  } catch (error) {
-    console.error('Error al eliminar la tarea:', error)
-    return res.status(500).json({ message: 'Error al eliminar la tarea' })
-  }
+		if (!task) {
+			return res.status(404).json({ message: 'Task not found' });
+		}
+
+		// Eliminar la imagen asociada si existe
+		if (task.imageUrl) {
+			fs.unlinkSync(path.join(__dirname, '..', task.imageUrl));
+		}
+
+		// Eliminar la tarea de la base de datos
+		await Task.findByIdAndDelete(id);
+
+		res.status(200).json({ message: 'Task deleted successfully' });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Server Error' });
+	}
 }
